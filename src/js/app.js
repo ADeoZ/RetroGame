@@ -4,6 +4,8 @@
 import GamePlay from './GamePlay';
 import GameController from './GameController';
 import GameStateService from './GameStateService';
+import Character from './Character'; // удалить
+import Swordsman from './Swordsman';
 
 const gamePlay = new GamePlay();
 gamePlay.bindToDOM(document.querySelector('#game-container'));
