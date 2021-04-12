@@ -3,7 +3,7 @@ export function calcTileType(index, boardSize) {
     if (index < boardSize) { // first column -> first line
       return 'top-left';
     }
-    if (index >= boardSize * boardSize - boardSize) { // first column -> last line
+    if (index >= boardSize ** 2 - boardSize) { // first column -> last line
       return 'bottom-left';
     }
     return 'left';
@@ -13,7 +13,7 @@ export function calcTileType(index, boardSize) {
     if (index < boardSize) { // last column -> first line
       return 'top-right';
     }
-    if (index >= boardSize * boardSize - boardSize) { // last column -> last line
+    if (index >= boardSize ** 2 - boardSize) { // last column -> last line
       return 'bottom-right';
     }
     return 'right';
@@ -22,7 +22,7 @@ export function calcTileType(index, boardSize) {
   if (index < boardSize) { // center -> first line
     return 'top';
   }
-  if (index >= boardSize * boardSize - boardSize) { // center -> last line
+  if (index >= boardSize ** 2 - boardSize) { // center -> last line
     return 'bottom';
   }
   return 'center';
