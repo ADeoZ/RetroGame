@@ -10,5 +10,5 @@ export function* characterGenerator(allowedTypes, maxLevel) {
 }
 
 export function generateTeam(allowedTypes, maxLevel, characterCount) {
-  // TODO: write logic here
+  console.log('hello');
 }
