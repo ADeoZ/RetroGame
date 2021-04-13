@@ -1,6 +1,6 @@
 export default class GameState {
   static from(object) {
-    // TODO: create object
+    if (object) { return null; } // temporarily for eslint
     return null;
   }
 }
