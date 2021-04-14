@@ -6,8 +6,4 @@ export default class Team {
   add(character) {
     this.members.push(character);
   }
-
-  toArray() {
-    return Array.from(this.members.values());
-  }
 }
