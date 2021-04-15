@@ -13,6 +13,8 @@ export default class GameController {
     this.stateService = stateService;
     this.playerPositions = [];
     this.enemyPositions = [];
+    this.selectedCharacter = 0;
+    this.turn = 0; // 0 - player, 1 - enemy
   }
 
   init() {
@@ -26,7 +28,7 @@ export default class GameController {
     this.addListeners();
   }
 
-  createTeam(allowedTypes, level, characterCount, side) {
+  createTeam(allowedTypes, level, characterCount, side) { // ? move to Team class ?
     const team = generateTeam(allowedTypes, level, characterCount);
     const lines = (side === 'player') ? [0, 1] : [6, 7];
     const posGenerator = positionGenerator(lines, 8);
@@ -39,6 +41,30 @@ export default class GameController {
     });
   }
 
+  checkCell(index) {
+    if (!(this.selectedCharacter instanceof PositionedCharacter)) {
+      throw new Error('One of character must be selected!');
+    }
+
+    if (this.selectedCharacter.position === index) {
+      return ['', 'auto'];
+    }
+    // select teammate
+    if (this.playerPositions.find((character) => character.position === index)) {
+      return ['', 'pointer'];
+    }
+    // attack enemy
+    if (this.selectedCharacter.attackCells.includes(index)
+      && this.enemyPositions.find((character) => character.position === index)) {
+      return ['red', 'crosshair'];
+    }
+    // step
+    if (this.selectedCharacter.stepCells.includes(index)) {
+      return ['green', 'pointer'];
+    }
+    return ['', 'not-allowed'];
+  }
+
   addListeners() {
     this.gamePlay.addCellEnterListener(this.onCellEnter.bind(this));
     this.gamePlay.addCellLeaveListener(this.onCellLeave.bind(this));
@@ -49,8 +75,11 @@ export default class GameController {
     const characterOnIndex = this.playerPositions
       .find((character) => character.position === index);
     if (characterOnIndex !== undefined) {
-      this.playerPositions.forEach((character) => this.gamePlay.deselectCell(character.position));
+      if (this.selectedCharacter) {
+        this.gamePlay.deselectCell(this.selectedCharacter.position);
+      }
       this.gamePlay.selectCell(index);
+      this.selectedCharacter = characterOnIndex;
     } else {
       GamePlay.showError('Select your warrior!');
     }
@@ -62,9 +91,21 @@ export default class GameController {
     if (characterOnIndex !== undefined) {
       this.gamePlay.showCellTooltip(`🎖${characterOnIndex.character.level} ⚔${characterOnIndex.character.attack} 🛡${characterOnIndex.character.defence} ❤${characterOnIndex.character.health}`, index);
     }
+
+    if (this.selectedCharacter) {
+      const selector = this.checkCell(index);
+      if (selector[0] !== '') {
+        this.gamePlay.selectCell(index, selector[0]);
+      }
+      this.gamePlay.setCursor(selector[1]);
+    }
   }
 
   onCellLeave(index) {
     this.gamePlay.hideCellTooltip(index);
+    this.gamePlay.setCursor('auto');
+    if (this.selectedCharacter.position !== index) {
+      this.gamePlay.deselectCell(index);
+    }
   }
 }

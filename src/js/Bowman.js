@@ -6,6 +6,6 @@ export default class Bowman extends Character {
     this.attack = 25;
     this.defence = 25;
     this.stepRadius = 2;
-    this.attackRadius = 2;
+    this.attackRadius = 8;
   }
 }
