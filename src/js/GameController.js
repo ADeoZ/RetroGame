@@ -47,22 +47,30 @@ export default class GameController {
     }
 
     if (this.selectedCharacter.position === index) {
-      return ['', 'auto'];
+      return ['self', '', 'auto'];
     }
     // select teammate
     if (this.playerPositions.find((character) => character.position === index)) {
-      return ['', 'pointer'];
+      return ['team', '', 'pointer'];
     }
     // attack enemy
     if (this.selectedCharacter.attackCells.includes(index)
       && this.enemyPositions.find((character) => character.position === index)) {
-      return ['red', 'crosshair'];
+      return ['attack', 'red', 'crosshair'];
     }
     // step
     if (this.selectedCharacter.stepCells.includes(index)) {
-      return ['green', 'pointer'];
+      return ['step', 'green', 'pointer'];
     }
-    return ['', 'not-allowed'];
+    return ['not', '', 'not-allowed'];
+  }
+
+  changeTurn(index) {
+    this.gamePlay.deselectCell(this.selectedCharacter.position);
+    this.gamePlay.deselectCell(index);
+    this.selectedCharacter = 0;
+    this.gamePlay.redrawPositions([...this.playerPositions, ...this.enemyPositions]);
+    this.turn = 1 - this.turn;
   }
 
   addListeners() {
@@ -72,16 +80,39 @@ export default class GameController {
   }
 
   onCellClick(index) {
-    const characterOnIndex = this.playerPositions
-      .find((character) => character.position === index);
-    if (characterOnIndex !== undefined) {
-      if (this.selectedCharacter) {
-        this.gamePlay.deselectCell(this.selectedCharacter.position);
+    if (!this.selectedCharacter || this.checkCell(index)[0] === 'team') {
+      const characterOnIndex = this.playerPositions
+        .find((character) => character.position === index);
+      if (characterOnIndex !== undefined) {
+        if (this.selectedCharacter) {
+          this.gamePlay.deselectCell(this.selectedCharacter.position);
+        }
+        this.gamePlay.selectCell(index);
+        this.selectedCharacter = characterOnIndex;
+      } else {
+        GamePlay.showError('Select your warrior!');
       }
-      this.gamePlay.selectCell(index);
-      this.selectedCharacter = characterOnIndex;
-    } else {
-      GamePlay.showError('Select your warrior!');
+    } else if (this.checkCell(index)[0] === 'not') {
+      GamePlay.showError('This move is not allowed!');
+    } else if (this.selectedCharacter && this.checkCell(index)[0] === 'step') {
+      this.gamePlay.deselectCell(this.selectedCharacter.position);
+      this.selectedCharacter.position = index;
+      this.changeTurn(index);
+    } else if (this.selectedCharacter && this.checkCell(index)[0] === 'attack') {
+      const victim = this.enemyPositions
+        .find((character) => character.position === index);
+      const damage = Math.max(
+        this.selectedCharacter.character.attack - victim.character.defence,
+        this.selectedCharacter.character.attack * 0.1,
+      );
+      const promise = this.gamePlay.showDamage(index, damage);
+      promise.then(() => {
+        victim.character.health -= damage;
+        if (victim.character.health <= 0) {
+          this.enemyPositions.splice(this.enemyPositions.indexOf(victim), 1);
+        }
+        this.changeTurn(index);
+      });
     }
   }
 
@@ -94,10 +125,10 @@ export default class GameController {
 
     if (this.selectedCharacter) {
       const selector = this.checkCell(index);
-      if (selector[0] !== '') {
-        this.gamePlay.selectCell(index, selector[0]);
+      if (selector[1] !== '') {
+        this.gamePlay.selectCell(index, selector[1]);
       }
-      this.gamePlay.setCursor(selector[1]);
+      this.gamePlay.setCursor(selector[2]);
     }
   }
 
