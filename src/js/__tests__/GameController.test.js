@@ -13,7 +13,7 @@ test('template literals', () => {
   const gameCtrl = new GameController(gamePlay, {});
   gameCtrl.init();
 
-  gameCtrl.playerPositions.push(new PositionedCharacter(new Swordsman(5), 9));
+  gameCtrl.playerTeam.add(new PositionedCharacter(new Swordsman(5), 9));
   gameCtrl.onCellEnter(9);
   expect(gamePlay.cells[9].title).toBe('🎖5 ⚔40 🛡10 ❤50');
 
@@ -30,8 +30,8 @@ test('onCellEnter Teammate', () => {
   const gameCtrl = new GameController(gamePlay, {});
   gameCtrl.init();
 
-  gameCtrl.playerPositions.push(new PositionedCharacter(new Swordsman(5), 0));
-  gameCtrl.playerPositions.push(new PositionedCharacter(new Swordsman(1), 3));
+  gameCtrl.playerTeam.add(new PositionedCharacter(new Swordsman(5), 0));
+  gameCtrl.playerTeam.add(new PositionedCharacter(new Swordsman(1), 3));
   gameCtrl.onCellClick(0);
   gameCtrl.onCellEnter(3);
   expect([...gamePlay.cells[0].classList]).toEqual(expect.arrayContaining(['selected-yellow']));
@@ -47,8 +47,8 @@ test('onCellEnter Enemy', () => {
   const gameCtrl = new GameController(gamePlay, {});
   gameCtrl.init();
 
-  gameCtrl.playerPositions.push(new PositionedCharacter(new Swordsman(5), 0));
-  gameCtrl.enemyPositions.push(new PositionedCharacter(new Daemon(1), 1));
+  gameCtrl.playerTeam.add(new PositionedCharacter(new Swordsman(5), 0));
+  gameCtrl.enemyTeam.add(new PositionedCharacter(new Daemon(1), 1));
   gameCtrl.onCellClick(0);
   gameCtrl.onCellEnter(1);
   expect([...gamePlay.cells[1].classList]).toEqual(expect.arrayContaining(['selected-red']));
@@ -64,7 +64,7 @@ test('onCellEnter Step', () => {
   const gameCtrl = new GameController(gamePlay, {});
   gameCtrl.init();
 
-  gameCtrl.playerPositions.push(new PositionedCharacter(new Swordsman(5), 0));
+  gameCtrl.playerTeam.add(new PositionedCharacter(new Swordsman(5), 0));
   gameCtrl.onCellClick(0);
   gameCtrl.onCellEnter(1);
   expect([...gamePlay.cells[1].classList]).toEqual(expect.arrayContaining(['selected-green']));
@@ -80,7 +80,7 @@ test('onCellEnter Not-allowed', () => {
   const gameCtrl = new GameController(gamePlay, {});
   gameCtrl.init();
 
-  gameCtrl.playerPositions.push(new PositionedCharacter(new Swordsman(5), 0));
+  gameCtrl.playerTeam.add(new PositionedCharacter(new Swordsman(5), 0));
   gameCtrl.onCellClick(0);
   gameCtrl.onCellEnter(6);
   expect([...gamePlay.cells[1].classList]).not.toEqual(expect.arrayContaining(['selected-green']));
