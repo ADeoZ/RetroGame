@@ -1,5 +1,3 @@
-import Team from './Team';
-
 /**
  * Generates random characters
  *
@@ -15,9 +13,9 @@ export function* characterGenerator(allowedTypes, maxLevel) {
 }
 
 export function generateTeam(allowedTypes, maxLevel, characterCount) {
-  const team = new Team();
+  const team = [];
   for (let i = 0; i < characterCount; i += 1) {
-    team.add(characterGenerator(allowedTypes, maxLevel).next().value);
+    team.push(characterGenerator(allowedTypes, maxLevel).next().value);
   }
   return team;
 }

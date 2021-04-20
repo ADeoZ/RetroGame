@@ -1,18 +1,13 @@
 import GamePlay from './GamePlay';
-import { generateTeam, positionGenerator } from './generators';
-import Bowman from './Bowman';
-import Swordsman from './Swordsman';
-import Daemon from './Daemon';
-import Undead from './Undead';
-import Vampire from './Vampire';
-import PositionedCharacter from './PositionedCharacter';
+import Team from './Team';
+import EnemyTeam from './EnemyTeam';
 
 export default class GameController {
   constructor(gamePlay, stateService) {
     this.gamePlay = gamePlay;
     this.stateService = stateService;
-    this.playerPositions = [];
-    this.enemyPositions = [];
+    this.playerTeam = new Team();
+    this.enemyTeam = new EnemyTeam();
     this.selectedCharacter = 0;
     this.turn = 0; // 0 - player, 1 - enemy
   }
@@ -20,57 +15,84 @@ export default class GameController {
   init() {
     this.gamePlay.drawUi('prairie');
 
-    this.createTeam([new Bowman(), new Swordsman()], 1, 2, 'player');
-    this.createTeam([new Daemon(), new Undead(), new Vampire()], 1, 2, 'enemy');
+    this.playerTeam.init();
+    this.enemyTeam.init();
 
-    this.gamePlay.redrawPositions([...this.playerPositions, ...this.enemyPositions]);
+    this.gamePlay.redrawPositions([...this.playerTeam.positioned, ...this.enemyTeam.positioned]);
 
     this.addListeners();
   }
 
-  createTeam(allowedTypes, level, characterCount, side) { // ? move to Team class ?
-    const team = generateTeam(allowedTypes, level, characterCount);
-    const lines = (side === 'player') ? [0, 1] : [6, 7];
-    const posGenerator = positionGenerator(lines, 8);
-    team.members.forEach((member) => {
-      if (side === 'player') {
-        this.playerPositions.push(new PositionedCharacter(member, posGenerator.next().value));
-      } else {
-        this.enemyPositions.push(new PositionedCharacter(member, posGenerator.next().value));
-      }
-    });
-  }
-
   checkCell(index) {
-    if (!(this.selectedCharacter instanceof PositionedCharacter)) {
-      throw new Error('One of character must be selected!');
-    }
-
     if (this.selectedCharacter.position === index) {
-      return ['self', '', 'auto'];
+      return { action: 'self', cursor: 'auto' };
     }
     // select teammate
-    if (this.playerPositions.find((character) => character.position === index)) {
-      return ['team', '', 'pointer'];
+    if (this.playerTeam.positioned.find((character) => character.position === index)) {
+      return { action: 'team', cursor: 'pointer' };
     }
     // attack enemy
     if (this.selectedCharacter.attackCells.includes(index)
-      && this.enemyPositions.find((character) => character.position === index)) {
-      return ['attack', 'red', 'crosshair'];
+      && this.enemyTeam.positioned.find((character) => character.position === index)) {
+      return { action: 'attack', cursor: 'crosshair', color: 'red' };
     }
     // step
     if (this.selectedCharacter.stepCells.includes(index)) {
-      return ['step', 'green', 'pointer'];
+      return { action: 'step', cursor: 'pointer', color: 'green' };
     }
-    return ['not', '', 'not-allowed'];
+    return { action: 'not', cursor: 'not-allowed' };
   }
 
   changeTurn(index) {
     this.gamePlay.deselectCell(this.selectedCharacter.position);
     this.gamePlay.deselectCell(index);
     this.selectedCharacter = 0;
-    this.gamePlay.redrawPositions([...this.playerPositions, ...this.enemyPositions]);
+    this.gamePlay.redrawPositions([...this.playerTeam.positioned, ...this.enemyTeam.positioned]);
     this.turn = 1 - this.turn;
+
+    // enemyTeam turn
+    const enemyAttack = this.enemyTeam.turn(this.playerTeam.positioned);
+    if (enemyAttack) {
+      this.gamePlay.selectCell(enemyAttack.index);
+      this.gamePlay.selectCell(enemyAttack.attackIndex, 'red');
+      const promise = this.attack(enemyAttack.index, enemyAttack.attackIndex);
+      promise.then(() => {
+        this.gamePlay.redrawPositions(
+          [...this.playerTeam.positioned, ...this.enemyTeam.positioned],
+        );
+        this.gamePlay.deselectCell(enemyAttack.index);
+        this.gamePlay.deselectCell(enemyAttack.attackIndex);
+      });
+    } else {
+      this.gamePlay.redrawPositions([...this.playerTeam.positioned, ...this.enemyTeam.positioned]);
+    }
+    this.turn = 1 - this.turn;
+  }
+
+  attack(index, attackIndex) {
+    return new Promise((resolve) => {
+      const attacker = [...this.playerTeam.positioned, ...this.enemyTeam.positioned]
+        .find((character) => character.position === index);
+      const victim = [...this.playerTeam.positioned, ...this.enemyTeam.positioned]
+        .find((character) => character.position === attackIndex);
+      const damage = Math.max(
+        attacker.character.attack - victim.character.defence,
+        attacker.character.attack * 0.1,
+      );
+
+      const promise = this.gamePlay.showDamage(attackIndex, damage);
+      promise.then(() => {
+        victim.character.health -= damage;
+        if (victim.character.health <= 0) { // kill enemy
+          if (this.enemyTeam.positioned.includes(victim)) {
+            this.enemyTeam.positioned.splice(this.enemyTeam.positioned.indexOf(victim), 1);
+          } else {
+            this.playerTeam.positioned.splice(this.playerTeam.positioned.indexOf(victim), 1);
+          }
+        }
+        resolve();
+      });
+    });
   }
 
   addListeners() {
@@ -80,8 +102,8 @@ export default class GameController {
   }
 
   onCellClick(index) {
-    if (!this.selectedCharacter || this.checkCell(index)[0] === 'team') {
-      const characterOnIndex = this.playerPositions
+    if (!this.selectedCharacter || this.checkCell(index).action === 'team') { // select teammate
+      const characterOnIndex = this.playerTeam.positioned
         .find((character) => character.position === index);
       if (characterOnIndex !== undefined) {
         if (this.selectedCharacter) {
@@ -92,32 +114,20 @@ export default class GameController {
       } else {
         GamePlay.showError('Select your warrior!');
       }
-    } else if (this.checkCell(index)[0] === 'not') {
+    } else if (this.checkCell(index).action === 'not') { // not allowed move
       GamePlay.showError('This move is not allowed!');
-    } else if (this.selectedCharacter && this.checkCell(index)[0] === 'step') {
+    } else if (this.checkCell(index).action === 'step') { // step move
       this.gamePlay.deselectCell(this.selectedCharacter.position);
       this.selectedCharacter.position = index;
       this.changeTurn(index);
-    } else if (this.selectedCharacter && this.checkCell(index)[0] === 'attack') {
-      const victim = this.enemyPositions
-        .find((character) => character.position === index);
-      const damage = Math.max(
-        this.selectedCharacter.character.attack - victim.character.defence,
-        this.selectedCharacter.character.attack * 0.1,
-      );
-      const promise = this.gamePlay.showDamage(index, damage);
-      promise.then(() => {
-        victim.character.health -= damage;
-        if (victim.character.health <= 0) {
-          this.enemyPositions.splice(this.enemyPositions.indexOf(victim), 1);
-        }
-        this.changeTurn(index);
-      });
+    } else if (this.checkCell(index).action === 'attack') { // attack
+      const promise = this.attack(this.selectedCharacter.position, index);
+      promise.then(() => this.changeTurn(index));
     }
   }
 
   onCellEnter(index) {
-    const characterOnIndex = [...this.playerPositions, ...this.enemyPositions]
+    const characterOnIndex = [...this.playerTeam.positioned, ...this.enemyTeam.positioned]
       .find((character) => character.position === index);
     if (characterOnIndex !== undefined) {
       this.gamePlay.showCellTooltip(`🎖${characterOnIndex.character.level} ⚔${characterOnIndex.character.attack} 🛡${characterOnIndex.character.defence} ❤${characterOnIndex.character.health}`, index);
@@ -125,10 +135,10 @@ export default class GameController {
 
     if (this.selectedCharacter) {
       const selector = this.checkCell(index);
-      if (selector[1] !== '') {
-        this.gamePlay.selectCell(index, selector[1]);
+      if (selector.color) {
+        this.gamePlay.selectCell(index, selector.color);
       }
-      this.gamePlay.setCursor(selector[2]);
+      this.gamePlay.setCursor(selector.cursor);
     }
   }
 
