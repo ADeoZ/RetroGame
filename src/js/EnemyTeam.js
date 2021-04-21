@@ -7,14 +7,14 @@ export default class EnemyTeam extends Team {
   constructor() {
     super();
     this.allowedTypes = [new Daemon(), new Undead(), new Vampire()];
-    this.startLines = [3, 4];
+    this.startLines = [6, 7];
   }
 
   turn(playerPositioned) {
     if (this.attack(playerPositioned)) {
       return this.attack(playerPositioned);
     }
-    // this.step(playerPositioned);
+    this.step(playerPositioned);
     return null;
   }
 
@@ -44,6 +44,7 @@ export default class EnemyTeam extends Team {
   step(playerPositioned) {
     const boardSize = 8;
     const distances = [];
+
     this.positioned.forEach((member) => {
       playerPositioned.forEach((character) => {
         distances.push({
@@ -63,7 +64,14 @@ export default class EnemyTeam extends Team {
       return 0;
     });
 
-    return null;
+    const bestMove = EnemyTeam.bestMove(distances[0].member, distances[0].targetIndex, boardSize);
+    for (let i = 0; i < bestMove.length; i += 1) {
+      if ([...playerPositioned, ...this.positioned]
+        .findIndex((character) => character.position === bestMove[i].stepIndex) < 0) {
+        distances[0].member.position = bestMove[i].stepIndex;
+        break;
+      }
+    }
   }
 
   static calcSteps(index, target, boardSize) {
@@ -73,21 +81,29 @@ export default class EnemyTeam extends Team {
     const horizontal = Math.abs(
       Math.floor(index.position % boardSize) - Math.floor(target.position % boardSize),
     );
-    const vertStep = vertical - index.character.attackRadius > 0
-      ? vertical - index.character.attackRadius : 0;
-
-    let horStep = 0;
-    if (vertStep === 0) {
-      horStep = horizontal - index.character.attackRadius;
-    } else {
-      horStep = horizontal - vertical - index.character.attackRadius + 1;
+    const vertSteps = Math.ceil(
+      (vertical - index.character.attackRadius) / index.character.stepRadius,
+    );
+    const horSteps = Math.ceil(
+      (horizontal - index.character.attackRadius) / index.character.stepRadius,
+    );
+    if (vertSteps < horSteps) {
+      return horSteps > 0 ? horSteps : 0;
     }
-    horStep = horStep > 0 ? horStep : 0;
+    return vertSteps > 0 ? vertSteps : 0;
+  }
 
-    // return vertical + diag - index.character.attackRadius >= 0
-    //   ? vertical + diag - index.character.attackRadius : 0;
-
-    return Math.ceil(vertStep / index.character.stepRadius)
-     + Math.ceil(horStep / index.character.stepRadius);
+  static bestMove(index, target, boardSize) {
+    const bestStep = [];
+    index.stepCells.forEach((stepIndex) => {
+      const vertical = Math.abs(
+        Math.floor(stepIndex / boardSize) - Math.floor(target / boardSize),
+      );
+      const horizontal = Math.abs(
+        Math.floor(stepIndex % boardSize) - Math.floor(target % boardSize),
+      );
+      bestStep.push({ stepIndex, result: vertical + horizontal - index.character.attackRadius });
+    });
+    return bestStep.sort((a, b) => a.result - b.result);
   }
 }
