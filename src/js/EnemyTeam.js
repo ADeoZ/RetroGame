@@ -1,4 +1,6 @@
 import Team from './Team';
+import { generateTeam, positionGenerator } from './generators';
+import PositionedCharacter from './PositionedCharacter';
 import Daemon from './Characters/Daemon';
 import Undead from './Characters/Undead';
 import Vampire from './Characters/Vampire';
@@ -12,7 +14,7 @@ export default class EnemyTeam extends Team {
 
   turn(playerPositioned) {
     if (this.attack(playerPositioned)) {
-      // return this.attack(playerPositioned);
+      return this.attack(playerPositioned);
     }
     this.step(playerPositioned);
     return null;
@@ -105,5 +107,17 @@ export default class EnemyTeam extends Team {
       bestStep.push({ stepIndex, result: vertical + horizontal - index.character.attackRadius });
     });
     return bestStep.sort((a, b) => a.result - b.result);
+  }
+
+  levelUp(level, countChar) {
+    const posGenerator = positionGenerator(this.startLines, 8);
+    const newMembers = generateTeam(this.allowedTypes, level, countChar);
+    for (const member of newMembers) {
+      member.attack = Math.floor(member.attack
+         * ((1.8 - (1 - member.health / 100)) ** (member.level - 1)));
+      member.defence = Math.floor(member.defence
+         * ((1.8 - (1 - member.health / 100)) ** (member.level - 1)));
+      this.add(new PositionedCharacter(member, posGenerator.next().value));
+    }
   }
 }

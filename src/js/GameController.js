@@ -154,7 +154,7 @@ export default class GameController {
           this.gamePlay.deselectCell(enemyAttack.index);
           this.gamePlay.deselectCell(enemyAttack.attackIndex);
           if (this.playerTeam.positioned.length === 0) {
-            console.log('You died!');
+            GamePlay.showError('You died!');
           } else {
             this.turn = 1 - this.turn;
           }
@@ -170,12 +170,10 @@ export default class GameController {
 
   levelUp() {
     this.level += 1;
-    this.gamePlay.drawUi(themes[this.level]);
+    this.gamePlay.drawUi(themes[this.level % 4]);
 
-    console.log(this.playerTeam.positioned);
-    this.playerTeam.levelUp();
-    console.log(this.playerTeam.positioned);
-    // this.enemyTeam.levelUp();
+    this.playerTeam.levelUp(this.level + 1);
+    this.enemyTeam.levelUp(this.level + 1, this.playerTeam.positioned.length);
 
     this.gamePlay.redrawPositions([...this.playerTeam.positioned, ...this.enemyTeam.positioned]);
   }
