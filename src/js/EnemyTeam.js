@@ -1,7 +1,7 @@
 import Team from './Team';
-import Daemon from './Daemon';
-import Undead from './Undead';
-import Vampire from './Vampire';
+import Daemon from './Characters/Daemon';
+import Undead from './Characters/Undead';
+import Vampire from './Characters/Vampire';
 
 export default class EnemyTeam extends Team {
   constructor() {
@@ -12,7 +12,7 @@ export default class EnemyTeam extends Team {
 
   turn(playerPositioned) {
     if (this.attack(playerPositioned)) {
-      return this.attack(playerPositioned);
+      // return this.attack(playerPositioned);
     }
     this.step(playerPositioned);
     return null;
