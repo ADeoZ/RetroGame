@@ -1,30 +1,39 @@
 export function calcTileType(index, boardSize) {
   if (index % 8 === 0) {
-    if (index < boardSize) { // first column -> first line
+    // first column -> first line
+    if (index < boardSize) {
       return 'top-left';
     }
-    if (index >= boardSize ** 2 - boardSize) { // first column -> last line
+    // first column -> last line
+    if (index >= boardSize ** 2 - boardSize) {
       return 'bottom-left';
     }
+    // else first column
     return 'left';
   }
 
   if (index % 8 === 7) {
-    if (index < boardSize) { // last column -> first line
+    // last column -> first line
+    if (index < boardSize) {
       return 'top-right';
     }
-    if (index >= boardSize ** 2 - boardSize) { // last column -> last line
+    // last column -> last line
+    if (index >= boardSize ** 2 - boardSize) {
       return 'bottom-right';
     }
+    // else last column
     return 'right';
   }
 
-  if (index < boardSize) { // center -> first line
+  // center of first line
+  if (index < boardSize) {
     return 'top';
   }
-  if (index >= boardSize ** 2 - boardSize) { // center -> last line
+  // center of last line
+  if (index >= boardSize ** 2 - boardSize) {
     return 'bottom';
   }
+  // all the rest
   return 'center';
 }
 

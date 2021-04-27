@@ -1,3 +1,9 @@
+/**
+* Positions for every chars
+* keep the position and char class
+* calc possible attack and step cells for char based on it position
+*/
+
 import Character from './Characters/Character';
 
 export default class PositionedCharacter {
@@ -14,10 +20,13 @@ export default class PositionedCharacter {
     this.position = position;
   }
 
+  // calc possible steps based on current position and step radius
   get stepCells() {
     const boardSize = 8;
     const stepsArray = [this.position];
     const positionLine = this.position % boardSize;
+
+    // moving around within the board, chosing only horizontals, verticals and diagonals
     for (let i = 1; i <= this.character.stepRadius; i += 1) {
       const top = this.position - boardSize * i;
       const topRight = this.position - boardSize * i + i;
@@ -28,6 +37,8 @@ export default class PositionedCharacter {
       const left = this.position - 1 * i;
       const topLeft = this.position - boardSize * i - i;
 
+      // comparison '>= 0' mean top left corner
+      // comparison 'boardSize ** 2' mean bottom right corner
       if (top >= 0) {
         stepsArray.push(top);
       }
@@ -57,9 +68,12 @@ export default class PositionedCharacter {
     return stepsArray;
   }
 
+  // calc possible attack cells based on current position and attack radius
   get attackCells() {
     const boardSize = 8;
     const attackArray = [];
+
+    // calc entire area around the char within board size
     const rowStart = Math.floor(this.position / boardSize) - this.character.attackRadius >= 0
       ? Math.floor(this.position / boardSize) - this.character.attackRadius : 0;
     const rowEnd = Math.floor(this.position / boardSize) + this.character.attackRadius < boardSize
@@ -69,6 +83,7 @@ export default class PositionedCharacter {
     const lineEnd = (this.position % boardSize) + this.character.attackRadius < boardSize
       ? (this.position % boardSize) + this.character.attackRadius : boardSize - 1;
 
+    // moving line by line
     for (let i = rowStart; i <= rowEnd; i += 1) {
       for (let j = lineStart; j <= lineEnd; j += 1) {
         attackArray.push(i * boardSize + j);

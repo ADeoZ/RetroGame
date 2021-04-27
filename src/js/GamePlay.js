@@ -35,6 +35,11 @@ export default class GamePlay {
         <button data-id="action-save" class="btn">Save Game</button>
         <button data-id="action-load" class="btn">Load Game</button>
       </div>
+      <div class="info">
+        <span data-id="level">LEVEL: 1</span>
+        <span data-id="score">SCORE: 0</span>
+        <span data-id="best-score">BEST: 0</span>
+      </div>
       <div class="board-container">
         <div data-id="board" class="board"></div>
       </div>
@@ -47,6 +52,10 @@ export default class GamePlay {
     this.newGameEl.addEventListener('click', (event) => this.onNewGameClick(event));
     this.saveGameEl.addEventListener('click', (event) => this.onSaveGameClick(event));
     this.loadGameEl.addEventListener('click', (event) => this.onLoadGameClick(event));
+
+    this.currentLevel = this.container.querySelector('[data-id=level]');
+    this.score = this.container.querySelector('[data-id=score]');
+    this.bestScore = this.container.querySelector('[data-id=best-score]');
 
     this.boardEl = this.container.querySelector('[data-id=board]');
 
@@ -227,5 +236,20 @@ export default class GamePlay {
     if (this.container === null) {
       throw new Error('GamePlay not bind to DOM');
     }
+  }
+
+  // show the current level number on the board
+  setLevel(level) {
+    this.currentLevel.innerHTML = `LEVEL: ${level + 1}`;
+  }
+
+  // show the current score on the board
+  setScore(score) {
+    this.score.innerHTML = `SCORE: ${+score.toFixed(2)}`;
+  }
+
+  // show the best score on the board
+  setBestScore(score) {
+    this.bestScore.innerHTML = `BEST: ${+score.toFixed(2)}`;
   }
 }
